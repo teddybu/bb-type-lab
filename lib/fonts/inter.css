@@ -1,0 +1,8 @@
+/* Inter Variable — selbst gehostet */
+@font-face {
+	font-family: 'Inter';
+	font-style: normal;
+	font-weight: 400 800;
+	font-display: swap;
+	src: url('inter-variable.woff2') format('woff2');
+}

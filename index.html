@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>BB Type Lab</title>
+	<meta name="description" content="Generiere einen komplett neuen Font aus Parametern (Gewicht, Breite, Kontrast, Serifen …) und lade ihn als TTF/OTF herunter.">
+	<meta name="theme-color" content="#0a0a10">
+
+	<link rel="stylesheet" href="lib/fonts/inter.css">
+	<link rel="stylesheet" href="styles.css">
+
+	<!-- opentype.js: Font-Erzeugung, TTF/OTF-Export (selbst gehostet) -->
+	<script src="lib/opentype.min.js"></script>
+	<!-- JSZip: Font + README als ZIP bündeln (selbst gehostet) -->
+	<script src="lib/jszip.min.js"></script>
+</head>
+<body>
+	<div class="app">
+
+		<!-- ============ HEADER ============ -->
+		<header class="app-header">
+			<div class="brand">
+				<a href="https://bjoern.burkhard.online/" target="_blank" rel="noopener" aria-label="bjornburkhard.de">
+					<div class="brand-mark" aria-hidden="true"><img src="../favicon.ico" alt="" width="32" height="32"></div>
+				</a>
+				<div class="brand-text">
+					<h1>BB Type Lab</h1>
+					<p>Generiere aus Parametern einen komplett neuen Font – als echtes TTF/OTF downloadbar.</p>
+				</div>
+			</div>
+			<div class="header-actions">
+				<button type="button" class="btn btn-ghost" data-action="randomize" title="Zufällige Parameter">
+					<span aria-hidden="true"></span> Zufall
+				</button>
+				<button type="button" class="btn btn-ghost" data-action="showcase" title="Showcase-Modus">
+					<span aria-hidden="true">⛶</span> Showcase
+				</button>
+				<button type="button" class="btn btn-ghost" data-action="reset" title="Auf Standard zurücksetzen">
+					<span aria-hidden="true">↺</span>
+				</button>
+			</div>
+		</header>
+
+		<!-- ============ SHOWCASE OVERLAY ============ -->
+		<div id="showcase" class="showcase" hidden>
+			<canvas id="showcaseCanvas" class="showcase-canvas"></canvas>
+			<div class="showcase-hint" id="showcaseHint"></div>
+			<div class="showcase-meta" id="showcaseMeta"></div>
+			<button class="showcase-close" id="showcaseClose" title="Schließen">✕</button>
+		</div>
+
+		<!-- ============ MAIN ============ -->
+		<main class="app-main">
+
+			<!-- Left: Controls -->
+			<aside class="controls" aria-label="Steuerung">
+
+				<!-- IDENTITY & STYLE PRESETS -->
+				<section class="panel">
+					<h2 class="panel-title">Identität</h2>
+					<label class="text-field">
+						<span>Font-Name</span>
+						<input type="text" id="fontName" value="Aurora Sans" maxlength="40" autocomplete="off" spellcheck="false">
+					</label>
+					<button type="button" id="generateName" class="chip" style="margin-top:6px;" title="Namen aus aktuellen Parametern generieren">Namen generieren</button>
+					<div class="chip-row" style="margin-top: 10px;">
+						<button type="button" class="chip" data-preset-style="clean-sans">Clean Sans</button>
+						<button type="button" class="chip" data-preset-style="bold-slab">Bold Slab</button>
+						<button type="button" class="chip" data-preset-style="thin-elegant">Thin Elegant</button>
+						<button type="button" class="chip" data-preset-style="condensed">Condensed</button>
+						<button type="button" class="chip" data-preset-style="italic">Italic</button>
+						<button type="button" class="chip" data-preset-style="display">Display</button>
+					</div>
+				</section>
+
+				<!-- STRUCTURE -->
+				<section class="panel">
+					<h2 class="panel-title">Struktur</h2>
+					<div class="slider-row">
+						<div class="slider-head">
+							<label for="weight">Gewicht <span class="axis-tag">stem</span></label>
+							<output id="weightOut">80</output>
+						</div>
+						<input type="range" id="weight" min="20" max="200" value="80" step="1">
+					</div>
+					<div class="slider-row">
+						<div class="slider-head">
+							<label for="widthScale">Breite</label>
+							<output id="widthScaleOut">100%</output>
+						</div>
+						<input type="range" id="widthScale" min="60" max="140" value="100" step="1">
+					</div>
+					<div class="slider-row">
+						<div class="slider-head">
+							<label for="contrast">Kontrast <span class="axis-tag">thick/thin</span></label>
+							<output id="contrastOut">1.0</output>
+						</div>
+						<input type="range" id="contrast" min="1" max="8" value="1" step="0.1">
+					</div>
+					<div class="slider-row">
+						<div class="slider-head">
+							<label for="slant">Neigung (Italic)</label>
+							<output id="slantOut">0°</output>
+						</div>
+						<input type="range" id="slant" min="-15" max="15" value="0" step="1">
+					</div>
+				</section>
+
+				<!-- PROPORTIONS -->
+				<section class="panel">
+					<h2 class="panel-title">Proportionen</h2>
+					<div class="slider-row">
+						<div class="slider-head">
+							<label for="xHeight">x-Höhe</label>
+							<output id="xHeightOut">500</output>
+						</div>
+						<input type="range" id="xHeight" min="300" max="700" value="500" step="10">
+					</div>
+					<div class="slider-row">
+						<div class="slider-head">
+							<label for="capHeight">Cap-Höhe</label>
+							<output id="capHeightOut">700</output>
+						</div>
+						<input type="range" id="capHeight" min="500" max="900" value="700" step="10">
+					</div>
+					<div class="slider-row">
+						<div class="slider-head">
+							<label for="ascender">Ascender</label>
+							<output id="ascenderOut">800</output>
+						</div>
+						<input type="range" id="ascender" min="600" max="950" value="800" step="10">
+					</div>
+					<div class="slider-row">
+						<div class="slider-head">
+							<label for="descender">Descender</label>
+							<output id="descenderOut">200</output>
+						</div>
+						<input type="range" id="descender" min="50" max="400" value="200" step="10">
+					</div>
+				</section>
+
+				<!-- SHAPE LANGUAGE -->
+				<section class="panel">
+					<h2 class="panel-title">Formsprache</h2>
+					<div class="slider-row">
+						<div class="slider-head">
+							<label for="aperture">Öffnung (Apertur)</label>
+							<output id="apertureOut">50%</output>
+						</div>
+						<input type="range" id="aperture" min="0" max="100" value="50" step="1">
+					</div>
+					<div class="slider-row">
+						<div class="slider-head">
+							<label for="sidebearing">Zeichen-Abstand</label>
+							<output id="sidebearingOut">40</output>
+						</div>
+						<input type="range" id="sidebearing" min="0" max="120" value="40" step="1">
+					</div>
+					<div class="slider-row" style="display: none;">
+						<div class="slider-head">
+							<label for="cornerRadius">Ecken-Radius</label>
+							<output id="cornerRadiusOut">0</output>
+						</div>
+						<input type="range" id="cornerRadius" min="0" max="300" value="0" step="1">
+					</div>
+					<div class="slider-row">
+						<div class="slider-head">
+							<label for="bowlRadius">Bauch-Radius</label>
+							<output id="bowlRadiusOut">100%</output>
+						</div>
+						<input type="range" id="bowlRadius" min="0" max="100" value="100" step="1">
+					</div>
+					<div class="slider-row">
+						<div class="slider-head">
+							<label for="fraktur">Fraktur <span class="axis-tag">gebrochen</span></label>
+							<output id="frakturOut">0%</output>
+						</div>
+						<input type="range" id="fraktur" min="0" max="100" value="0" step="1">
+					</div>
+					<div class="slider-row">
+						<div class="slider-head">
+							<label for="ornament">Ornamente <span class="axis-tag">Buchinitialen</span></label>
+							<output id="ornamentOut">0%</output>
+						</div>
+						<input type="range" id="ornament" min="0" max="100" value="0" step="1">
+					</div>
+				</section>
+
+				<!-- SERIFS -->
+				<section class="panel">
+					<h2 class="panel-title">Serifen</h2>
+					<div class="btn-group full" role="group" aria-label="Serifen-Stil">
+						<button type="button" class="seg-large" data-serif="none"     aria-pressed="true">Keine</button>
+						<button type="button" class="seg-large" data-serif="slab"     aria-pressed="false">Slab</button>
+						<button type="button" class="seg-large" data-serif="hairline" aria-pressed="false">Hairline</button>
+						<button type="button" class="seg-large" data-serif="wedge"    aria-pressed="false">Wedge</button>
+					</div>
+					<div class="slider-row" style="margin-top: 12px;">
+						<div class="slider-head">
+							<label for="serifSize">Serif-Länge</label>
+							<output id="serifSizeOut">40</output>
+						</div>
+						<input type="range" id="serifSize" min="0" max="120" value="40" step="1">
+					</div>
+					<div class="slider-row">
+						<div class="slider-head">
+							<label for="serifThickness">Serif-Dicke</label>
+							<output id="serifThicknessOut">20</output>
+						</div>
+						<input type="range" id="serifThickness" min="5" max="80" value="20" step="1">
+					</div>
+				</section>
+
+				<!-- PREVIEW TEXT & COLORS -->
+				<section class="panel">
+					<h2 class="panel-title">Text &amp; Vorschau</h2>
+					<textarea id="previewText" class="text-input" rows="2" spellcheck="false">The quick brown fox jumps over the lazy dog</textarea>
+					<div class="chip-row" style="margin-top: 8px;">
+						<button type="button" class="chip" data-preset="pangram">Pangram</button>
+						<button type="button" class="chip" data-preset="alphabet">Alphabet</button>
+						<button type="button" class="chip" data-preset="numbers">Zahlen</button>
+						<button type="button" class="chip" data-preset="name">Font-Name</button>
+					</div>
+					<div class="slider-row" style="margin-top: 12px;">
+						<div class="slider-head">
+							<label for="previewSize">Vorschau-Größe</label>
+							<output id="previewSizeOut">72 px</output>
+						</div>
+						<input type="range" id="previewSize" min="12" max="240" value="72" step="1">
+					</div>
+					<div class="color-row" style="margin-top: 10px;">
+						<div class="color-field">
+							<span>Text</span>
+							<div class="color-swatch" style="background: #f5f5ff;">
+								<input type="color" id="textColor" value="#f5f5ff">
+							</div>
+						</div>
+						<div class="color-field">
+							<span>BG</span>
+							<div class="color-swatch" style="background: #0f0f18;">
+								<input type="color" id="bgColor" value="#0f0f18">
+							</div>
+						</div>
+					</div>
+				</section>
+
+			</aside>
+
+			<!-- Right: Preview -->
+			<section class="preview-panel" aria-label="Vorschau">
+				<div class="preview-toolbar">
+					<div class="mode-tabs" role="tablist" aria-label="Ansichtsmodus">
+						<button type="button" class="tab active" data-mode="free"       aria-pressed="true">Frei</button>
+						<button type="button" class="tab"        data-mode="waterfall"  aria-pressed="false">Waterfall</button>
+						<button type="button" class="tab"        data-mode="specimen"   aria-pressed="false">Specimen</button>
+						<button type="button" class="tab"        data-mode="characters" aria-pressed="false">Zeichen</button>
+					</div>
+					<div class="preview-info">
+						<code id="fontStatus" class="dim">bereit</code>
+					</div>
+				</div>
+				<div class="preview-stage" id="previewStage">
+					<canvas id="previewCanvas" class="preview-canvas"></canvas>
+					<div class="preview-content" id="preview"></div>
+				</div>
+			</section>
+
+		</main>
+
+		<!-- ============ EXPORT BAR ============ -->
+		<footer class="export-bar" aria-label="Export">
+			<div class="export-title">
+				<span class="export-dot" aria-hidden="true"></span>
+				<span>Neuer Font</span>
+			</div>
+			<div class="export-buttons">
+				<button type="button" class="btn"             data-export="css">CSS (embed)</button>
+				<button type="button" class="btn"             data-export="specimen">Specimen PNG</button>
+				<button type="button" class="btn"             data-export="otf">OTF</button>
+				<button type="button" class="btn"             data-export="woff">WOFF</button>
+				<button type="button" class="btn btn-primary" data-export="ttf">TTF</button>
+			</div>
+		</footer>
+
+		<!-- CC-Lizenzhinweis -->
+		<div class="cc-notice" aria-label="Lizenz">
+			<span>
+				Fonts generiert mit <strong>BB Type Lab</strong> von
+				<a href="https://bjoern.burkhard.online" target="_blank" rel="noopener">Björn Burkhard</a>
+				— lizenziert unter
+				<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">
+					CC BY 4.0
+				</a>
+				<img src="https://licensebuttons.net/l/by/4.0/80x15.png" alt="CC BY 4.0" style="vertical-align:middle;margin-left:6px;height:15px;">
+			</span>
+		</div>
+
+		<!-- Toast -->
+		<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+	</div>
+
+	<script src="glyphs.js" defer></script>
+	<script src="app.js" defer></script>
+</body>
+</html>

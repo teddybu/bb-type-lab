@@ -1,0 +1,16 @@
+{
+  "name": "var-font-creator",
+  "version": "1.0.0",
+  "description": "Ein interaktives Web-Tool zum Erstellen typografischer Kompositionen mit **Variable Fonts** – inklusive Export als **CSS**, **HTML**, **SVG** und **PNG**.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "canvas": "^3.2.3",
+    "opentype.js": "^1.3.4"
+  }
+}
